@@ -17,12 +17,11 @@
 
         body, html {
             height: 100%;
-            background-color: #000; /* Fallback background */
+            background-color: #000;
         }
 
         /* The Background Wrapper */
         .hero-section {
-            /* Adds a very subtle dark tint over your image so the white text stands out beautifully */
             background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.4)), url('background.jpg');
             background-size: cover;
             background-position: center;
@@ -34,14 +33,13 @@
             padding: 20px;
         }
 
-        /* The Message Container - Removed the white box completely */
+        /* The Message Container */
         .message-container {
             padding: 20px;
             max-width: 650px;
             text-align: center;
         }
 
-        /* All text is now white, italicized, with a deep drop shadow for legibility */
         h1 {
             font-family: 'Playfair Display', serif;
             font-weight: 600;
@@ -78,7 +76,27 @@
             font-family: 'Playfair Display', serif;
         }
 
-        /* Small decorative line with a soft shadow */
+        /* The Instagram Link Styling */
+        .social-link {
+            margin-top: 35px;
+            font-family: 'Lora', serif;
+        }
+
+        .social-link a {
+            color: #ffffff;
+            text-decoration: none;
+            font-style: italic;
+            font-size: 1.1rem;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            padding-bottom: 3px;
+            transition: opacity 0.3s ease;
+        }
+
+        .social-link a:hover {
+            opacity: 0.7;
+        }
+
         .divider {
             width: 70px;
             height: 1px;
@@ -87,7 +105,6 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
 
-        /* Mobile responsiveness adjustments */
         @media (max-width: 600px) {
             h1 {
                 font-size: 2.2rem;
@@ -97,6 +114,9 @@
             }
             p.message {
                 font-size: 1.05rem;
+            }
+            .social-link a {
+                font-size: 1rem;
             }
         }
     </style>
@@ -110,6 +130,10 @@
             <p class="quote">"A mother and daughter share a bond that grows more beautiful with every passing day."</p>
             <p class="message">For every hug, every little lesson, and the endless love you pour into my life—thank you. You are my guiding light, my comfort, and my favorite smile.</p>
             <p class="signature">With all my love,<br>Haadhya</p>
+            
+            <div class="social-link">
+                <a href="https://instagram.com/haadhya_wonders" target="_blank">Follow my journey: @haadhya_wonders</a>
+            </div>
         </div>
     </div>
 
