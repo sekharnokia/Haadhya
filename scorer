@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cricket Scorer: Complete Engine</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #121212; color: white; padding: 10px; margin: 0; }
+        .card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #333; }
+        .score-big { font-size: 3.2rem; font-weight: bold; color: #4ade80; text-align: center; margin: 5px 0; }
+        .ov { color: #aaa; font-size: 1.2rem; text-align: center; margin-bottom: 5px;}
+        .target-box { background: #3a2e15; color: #fbbf24; text-align: center; padding: 5px; border-radius: 5px; font-weight: bold; margin-bottom: 10px; display: none; }
+        
+        .this-over-container { text-align: center; padding: 10px; background: #252525; border-radius: 8px; margin-bottom: 10px; font-size: 1rem; color: #aaa; }
+        .ball-badge { display: inline-block; min-width: 20px; padding: 4px 8px; border-radius: 4px; margin: 2px; font-weight: bold; color: white; background: #444; text-align: center;}
+        .bb-bound { background: #fbbf24; color: black; }
+        .bb-wicket { background: #ef4444; }
+        .bb-extra { background: #3b82f6; }
+        
+        .history-row { background: #252525; padding: 10px; border-radius: 8px; margin-bottom: 6px; font-size: 0.9rem; color: #ccc; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid #fbbf24;}
+        .history-bowler { font-weight: bold; color: white; }
+        .history-balls { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;}
+        .hb-badge { padding: 3px 6px; border-radius: 4px; font-size: 0.8rem; background: #444; color: white; font-weight: bold;}
+
+        .batter-row, .bowler-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px; margin: 5px 0; background: #252525; }
+        .on-strike { border-left: 5px solid #4ade80; background: #2a3c2e; font-weight: bold; }
+        .bowler-row { border-left: 5px solid #fbbf24; background: #3a2e15; flex-wrap: wrap; }
+        
+        .btn-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        button { padding: 18px 5px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; }
+        .run { background: #333; }
+        .bound { background: #fbbf24; color: black; }
+        .ext { background: #3b82f6; }
+        .out { background: #ef4444; grid-column: span 2; }
+        .swap { background: #8b5cf6; grid-column: span 2; }
+        
+        .action-sub-grid { display: flex; gap: 8px; grid-column: span 4; margin-top: 4px;}
+        .ret-btn { flex: 1; background: #b45309; padding: 14px 5px; font-size: 0.95rem; font-weight: bold; border-radius: 8px; border: none; color: white; cursor: pointer;}
+        .hurt-btn { flex: 1; background: #2563eb; padding: 14px 5px; font-size: 0.95rem; font-weight: bold; border-radius: 8px; border: none; color: white; cursor: pointer;}
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: center; }
+        th { color: #777; font-size: 0.8rem; border-bottom: 1px solid #333; padding: 5px; text-align: center; }
+        th:first-child, td:first-child { text-align: left; }
+        td { padding: 8px 5px; border-bottom: 1px solid #222; font-size: 0.9rem; }
+        
+        .out-player { color: #666; text-decoration: line-through; }
+        .hurt-player { color: #60a5fa; font-style: italic; }
+        
+        .setup-field { background: #252525; border: 1px solid #444; color: white; padding: 10px; border-radius: 5px; width: 100%; box-sizing: border-box; margin-bottom: 10px;}
+        h4 { margin: 0 0 10px 0; color: #4ade80; }
+        
+        .admin-btns { display: flex; gap: 10px; margin-bottom: 10px; margin-top: 15px; }
+        .btn-admin { flex: 1; padding: 15px; background: #444; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-download { width: 100%; padding: 15px; background: #db2777; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; margin-bottom: 40px; font-size: 1.1rem;}
+
+        details summary { cursor: pointer; padding: 10px; background: #333; border-radius: 5px; font-weight: bold; outline: none; }
+        details[open] summary { margin-bottom: 10px; }
+        .prev-card-container { background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #444; overflow-x: auto;}
+    </style>
+</head>
+<body>
+
+    <div id="setup-screen" class="card">
+        <h3>Match Start</h3>
+        <input type="number" id="max-overs" class="setup-field" placeholder="Total Overs per Innings" value="20">
+        <input type="text" id="t1" class="setup-field" placeholder="Batting Team" value="Dunwoody Dashers">
+        <input type="text" id="t2" class="setup-field" placeholder="Bowling Team">
+        <input type="text" id="b1-init" class="setup-field" placeholder="Opener 1 Name">
+        <input type="text" id="b2-init" class="setup-field" placeholder="Opener 2 Name">
+        <input type="text" id="bwl-init" class="setup-field" placeholder="Opening Bowler Name">
+        <button onclick="initMatch()" style="background:#4ade80; color:black; width:100%; padding: 15px; font-size: 1.2rem; border-radius: 8px; font-weight: bold;">START MATCH</button>
+    </div>
+
+    <div id="score-screen" style="display:none;">
+        
+        <details id="prev-innings-card" class="card" style="display:none; border-color:#555;">
+            <summary style="color:#fbbf24;">🏏 View 1st Innings Scorecard</summary>
+            <div id="prev-innings-content" class="prev-card-container"></div>
+        </details>
+
+        <div class="card">
+            <div id="target-disp" class="target-box">Target: --</div>
+            <div class="score-big" id="main-score">0 - 0</div>
+            <div class="ov" id="main-overs">Overs: 0.0</div>
+            <div class="this-over-container">
+                This Over: <span id="this-over-tracker"></span>
+            </div>
+        </div>
+
+        <div class="card" id="history-log-card" style="display:none;">
+            <h4 style="color: #aaa; font-size: 0.9rem; margin-bottom: 8px;">Previous Overs</h4>
+            <div id="history-log-list"></div>
+        </div>
+
+        <div class="card">
+            <div id="row-b1" class="batter-row">
+                <span id="name-b1"></span> <span id="stat-b1">0(0)</span>
+            </div>
+            <div id="row-b2" class="batter-row">
+                <span id="name-b2"></span> <span id="stat-b2">0(0)</span>
+            </div>
+            <div class="bowler-row">
+                <div style="width: 100%; display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span id="name-bwl"></span> <span id="stat-bwl"></span>
+                </div>
+                <div id="bwl-this-over" class="history-balls" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <div class="btn-grid">
+            <button class="run" onclick="ball(0)">0</button>
+            <button class="run" onclick="ball(1)">1</button>
+            <button class="run" onclick="ball(2)">2</button>
+            <button class="run" onclick="ball(3)">3</button>
+            <button class="bound" onclick="ball(4)">4</button>
+            <button class="bound" onclick="ball(6)">6</button>
+            <button class="ext" onclick="extra('wd')">WD</button>
+            <button class="ext" onclick="extra('nb')">NB</button>
+            <button class="swap" onclick="swap()">SWAP STRIKE</button>
+            <button class="out" onclick="wicket()">WICKET</button>
+            
+            <div class="action-sub-grid">
+                <button class="ret-btn" onclick="retiredOut()">Tactical Retire Out</button>
+                <button class="hurt-btn" onclick="retiredHurt()">Retired Hurt (Can Return)</button>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 15px;">
+            <h4>Batting Scorecard</h4>
+            <table>
+                <thead><tr><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th></tr></thead>
+                <tbody id="bat-scorecard"></tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4 style="color: #fbbf24;">Bowling Scorecard</h4>
+            <table>
+                <thead><tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Econ</th><th>Wd</th><th>Nb</th></tr></thead>
+                <tbody id="bwl-scorecard"></tbody>
+            </table>
+        </div>
+
+        <div class="admin-btns">
+            <button id="undo-btn" class="btn-admin" onclick="undo()">Undo</button>
+            <button class="btn-admin" style="background:#8b5cf6;" onclick="manualEndInnings()">End Innings</button>
+            <button class="btn-admin" style="background:#ef4444;" onclick="resetMatch()">New Match</button>
+        </div>
+        
+        <button class="btn-download" onclick="downloadScorecardImage()">📸 Download Image Receipt (.png)</button>
+    </div>
+
+    <script>
+        function formatName(str) {
+            if (!str) return "";
+            return str.trim().toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+        }
+
+        const STORAGE_KEY = 'cricket_v29_stable';
+
+        let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+            active: false, innings: 1, target: null, maxOvers: 20, runs: 0, wickets: 0, balls: 0,
+            striker: "b1", thisOver: [], oversHistory: [],
+            b1: {name: "", r: 0, b: 0, f: 0, s: 0, out: false, fate: ""},
+            b2: {name: "", r: 0, b: 0, f: 0, s: 0, out: false, fate: ""},
+            others: [], currBwl: "", bowlers: {}, history: [],
+            innings1Data: null 
+        };
+
+        function initMatch() {
+            localStorage.clear();
+
+            state = {
+                active: true, innings: 1, target: null, 
+                maxOvers: parseInt(document.getElementById('max-overs').value) || 20, 
+                runs: 0, wickets: 0, balls: 0, striker: "b1", thisOver: [], oversHistory: [],
+                b1: {name: formatName(document.getElementById('b1-init').value || "Batter 1"), r: 0, b: 0, f: 0, s: 0, out: false, fate: ""},
+                b2: {name: formatName(document.getElementById('b2-init').value || "Batter 2"), r: 0, b: 0, f: 0, s: 0, out: false, fate: ""},
+                others: [], currBwl: formatName(document.getElementById('bwl-init').value || "Bowler 1"), bowlers: {}, history: [],
+                innings1Data: null
+            };
+
+            state.bowlers[state.currBwl] = {o: 0, b: 0, r: 0, w: 0, wd: 0, nb: 0};
+            render();
+        }
+
+        function getOvers(b) { return `${Math.floor(b/6)}.${b%6}`; }
+
+        function getBallHtml(b) {
+            let cls = 'ball-badge';
+            let displayB = (b === 0 || b === '0') ? '•' : b; 
+            if(b == '4' || b == '6') cls += ' bb-bound';
+            else if(b == 'W' || b == 'Ret' || b == 'Hurt') cls += ' bb-wicket';
+            else if(typeof b === 'string' && (b.includes('WD') || b.includes('NB'))) cls += ' bb-extra';
+            return `<span class="${cls}">${displayB}</span>`;
+        }
+
+        function renderThisOver() {
+            let html = state.thisOver.map(getBallHtml).join('');
+            document.getElementById('this-over-tracker').innerHTML = html || '-';
+            document.getElementById('bwl-this-over').innerHTML = html; 
+        }
+
+        function renderHistoryLog() {
+            let card = document.getElementById('history-log-card');
+            let list = document.getElementById('history-log-list');
+            if(!state.oversHistory || state.oversHistory.length === 0) { card.style.display = 'none'; return; }
+            card.style.display = 'block';
+            let html = state.oversHistory.map((ov, idx) => {
+                let ballsHtml = ov.balls.map(b => {
+                    let disp = (b === 0 || b === '0') ? '•' : b;
+                    let style = '';
+                    if(b=='W' || b=='Ret' || b=='Hurt') style='background:#ef4444;';
+                    else if(b=='4'||b=='6') style='background:#fbbf24;color:black;';
+                    else if(b.toString().includes('WD')||b.toString().includes('NB')) style='background:#3b82f6;';
+                    return `<span class="hb-badge" style="${style}">${disp}</span>`;
+                }).join('');
+                return `<div class="history-row">
+                    <span><span style="color:#aaa; font-size:0.8rem;">Ov ${idx + 1}</span> <span class="history-bowler">${ov.bowler}</span></span>
+                    <span class="history-balls">${ballsHtml}</span>
+                </div>`;
+            }).reverse().join(''); 
+            list.innerHTML = html;
+        }
+
+        function render() {
+            if(!state.active) return;
+            document.getElementById('setup-screen').style.display = "none";
+            document.getElementById('score-screen').style.display = "block";
+            
+            let uBtn = document.getElementById('undo-btn');
+            if(state.history.length > 0) {
+                uBtn.innerText = `Undo (${state.history.length})`;
+                uBtn.style.opacity = "1";
+            } else {
+                uBtn.innerText = "Undo";
+                uBtn.style.opacity = "0.5";
+            }
+
+            let prevCard = document.getElementById('prev-innings-card');
+            if (state.innings === 2 && state.innings1Data) {
+                prevCard.style.display = "block";
+                let d = state.innings1Data;
+                let html = `<h4 style="text-align:center; color:white;">1st Innings Total: ${d.runs}/${d.wickets} (${getOvers(d.balls)} Ov)</h4>`;
+                
+                html += `<table><thead><tr><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th></tr></thead><tbody>`;
+                d.batters.forEach(b => {
+                    let cls = b.fate === "Retired Hurt" ? "class='hurt-player'" : (b.out ? "class='out-player'" : "");
+                    let displayFate = b.fate ? ` (${b.fate === 'Retired Hurt' ? 'Hurt' : b.fate})` : "";
+                    html += `<tr ${cls}><td>${b.name}${displayFate}</td><td>${b.r}</td><td>${b.b}</td><td>${b.f}</td><td>${b.s}</td></tr>`;
+                });
+                html += `</tbody></table>`;
+                
+                html += `<h4 style="color:#fbbf24; margin-top:15px; margin-bottom:5px;">Bowling</h4>`;
+                html += `<table><thead><tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Econ</th><th>Wd</th><th>Nb</th></tr></thead><tbody>`;
+                for(let bName in d.bowlers) {
+                    let s = d.bowlers[bName];
+                    let econ = s.b === 0 ? "0.00" : (s.r / (s.b / 6)).toFixed(2);
+                    html += `<tr><td>${bName}</td><td>${getOvers(s.b)}</td><td>0</td><td>${s.r}</td><td><strong>${s.w}</strong></td><td>${econ}</td><td>${s.wd}</td><td>${s.nb}</td></tr>`;
+                }
+                html += `</tbody></table>`;
+                
+                // RESTORED: The visual 1st Innings Over Log!
+                if(d.oversHistory && d.oversHistory.length > 0) {
+                    html += `<h4 style="color:#aaa; margin-top:15px; margin-bottom:5px; font-size:0.9rem;">1st Innings Over Log</h4>`;
+                    d.oversHistory.forEach((ov, idx) => {
+                        let bHtml = ov.balls.map(b => {
+                            let disp = (b === 0 || b === '0') ? '•' : b;
+                            let style = '';
+                            if(b=='W' || b=='Ret' || b=='Hurt') style='background:#ef4444;';
+                            else if(b=='4'||b=='6') style='background:#fbbf24;color:black;';
+                            else if(b.toString().includes('WD')||b.toString().includes('NB')) style='background:#3b82f6;';
+                            return `<span class="hb-badge" style="margin-right:2px; ${style}">${disp}</span>`;
+                        }).join('');
+                        html += `<div class="history-row" style="margin-bottom:4px;"><span><span style="color:#aaa; font-size:0.8rem;">Ov ${idx+1}</span> <span class="history-bowler">${ov.bowler}</span></span><span class="history-balls">${bHtml}</span></div>`;
+                    });
+                }
+                
+                document.getElementById('prev-innings-content').innerHTML = html;
+
+                let tb = document.getElementById('target-disp');
+                tb.style.display = "block";
+                tb.innerText = `Target: ${state.target} (Need ${state.target - state.runs} runs from ${(state.maxOvers*6)-state.balls} balls)`;
+            } else {
+                prevCard.style.display = "none";
+            }
+
+            document.getElementById('main-score').innerText = `${state.runs} - ${state.wickets}`;
+            document.getElementById('main-overs').innerText = `Overs: ${getOvers(state.balls)} / ${state.maxOvers}`;
+            
+            renderThisOver();
+            renderHistoryLog();
+
+            document.getElementById('name-b1').innerText = state.b1.name + (state.striker === 'b1' ? '*' : '');
+            document.getElementById('name-b2').innerText = state.b2.name + (state.striker === 'b2' ? '*' : '');
+            document.getElementById('stat-b1').innerText = `${state.b1.r}(${state.b1.b})`;
+            document.getElementById('stat-b2').innerText = `${state.b2.r}(${state.b2.b})`;
+
+            document.getElementById('row-b1').className = state.striker === 'b1' ? 'batter-row on-strike' : 'batter-row';
+            document.getElementById('row-b2').className = state.striker === 'b2' ? 'batter-row on-strike' : 'batter-row';
+
+            let cb = state.bowlers[state.currBwl];
+            document.getElementById('name-bwl').innerText = `🏏 ${state.currBwl}`;
+            document.getElementById('stat-bwl').innerText = `${getOvers(cb.b)} - ${cb.r} - ${cb.w}  (Wd: ${cb.wd} | Nb: ${cb.nb})`;
+
+            const batTable = document.getElementById('bat-scorecard');
+            batTable.innerHTML = "";
+            state.others.forEach(p => { 
+                let cls = p.fate === "Retired Hurt" ? "class='hurt-player'" : "class='out-player'";
+                let displayFate = p.fate ? ` (${p.fate === 'Retired Hurt' ? 'Hurt' : p.fate})` : "";
+                batTable.innerHTML += `<tr ${cls}><td>${p.name}${displayFate}</td><td>${p.r}</td><td>${p.b}</td><td>${p.f}</td><td>${p.s}</td></tr>`; 
+            });
+            batTable.innerHTML += `<tr><td>${state.b1.name}*</td><td>${state.b1.r}</td><td>${state.b1.b}</td><td>${state.b1.f}</td><td>${state.b1.s}</td></tr>`;
+            batTable.innerHTML += `<tr><td>${state.b2.name}*</td><td>${state.b2.r}</td><td>${state.b2.b}</td><td>${state.b2.f}</td><td>${state.b2.s}</td></tr>`;
+            
+            const bwlTable = document.getElementById('bwl-scorecard');
+            bwlTable.innerHTML = "";
+            for (let bName in state.bowlers) {
+                let s = state.bowlers[bName];
+                let isCurr = (bName === state.currBwl) ? "*" : "";
+                let econ = s.b === 0 ? "0.00" : (s.r / (s.b / 6)).toFixed(2);
+                bwlTable.innerHTML += `<tr><td>${bName}${isCurr}</td><td>${getOvers(s.b)}</td><td>0</td><td>${s.r}</td><td><strong>${s.w}</strong></td><td>${econ}</td><td>${s.wd}</td><td>${s.nb}</td></tr>`;
+            }
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function checkOverAndInnings() {
+            if (state.innings === 2 && state.runs >= state.target) {
+                render(); setTimeout(() => alert("Match Over! Batting Team Wins!"), 200); return;
+            }
+            if (state.wickets >= 10 || state.balls >= (state.maxOvers * 6)) {
+                if (state.innings === 1) processInningsBreak();
+                else { render(); setTimeout(() => alert("Match Over! Bowling Team Wins!"), 200); }
+                return;
+            }
+            
+            let legalDeliveries = state.thisOver.filter(b => typeof b === 'number' || b === 'W').length;
+            if (legalDeliveries === 6) {
+                state.oversHistory.push({ bowler: state.currBwl, balls: [...state.thisOver] });
+                state.thisOver = []; 
+                let nextBwl = prompt("End of Over! Enter next bowler's name:");
+                while(!nextBwl || nextBwl.trim() === "") nextBwl = prompt("Required: Enter bowler's name:");
+                state.currBwl = formatName(nextBwl);
+                if (!state.bowlers[state.currBwl]) state.bowlers[state.currBwl] = {o: 0, b: 0, r: 0, w: 0, wd: 0, nb: 0};
+                render();
+            }
+        }
+
+        function processInningsBreak() {
+            let activeB1 = {...state.b1, name: state.b1.name + "*", out: false};
+            let activeB2 = {...state.b2, name: state.b2.name + "*", out: false};
+            if (state.thisOver.length > 0) state.oversHistory.push({ bowler: state.currBwl, balls: [...state.thisOver] });
+
+            state.innings1Data = {
+                runs: state.runs, wickets: state.wickets, balls: state.balls,
+                batters: [...state.others, activeB1, activeB2].filter(b => b.b > 0 || b.r > 0 || b.out || b.fate === "Retired Hurt"),
+                bowlers: JSON.parse(JSON.stringify(state.bowlers)),
+                oversHistory: JSON.parse(JSON.stringify(state.oversHistory))
+            };
+
+            state.target = state.runs + 1;
+            alert(`First Innings Complete! Target is ${state.target}. Ready for 2nd Innings.`);
+            
+            state.innings = 2;
+            state.runs = 0; state.wickets = 0; state.balls = 0;
+            state.thisOver = []; state.oversHistory = []; state.others = []; state.bowlers = {};
+            state.history = []; 
+            
+            state.b1 = {name: formatName(prompt("Innings 2 - Opener 1 Name:") || "Batter 1"), r: 0, b: 0, f: 0, s: 0, out: false, fate: ""};
+            state.b2 = {name: formatName(prompt("Innings 2 - Opener 2 Name:") || "Batter 2"), r: 0, b: 0, f: 0, s: 0, out: false, fate: ""};
+            let openingBowler = formatName(prompt("Innings 2 - Opening Bowler:") || "Bowler 1");
+            state.currBwl = openingBowler;
+            state.bowlers[openingBowler] = {o: 0, b: 0, r: 0, w: 0, wd: 0, nb: 0};
+            state.striker = "b1";
+            render();
+        }
+
+        function manualEndInnings() {
+            if(confirm("Declare / Force End this innings?")) {
+                pushHistory();
+                if(state.innings === 1) processInningsBreak();
+                else alert("Match Over!");
+            }
+        }
+
+        function ball(r) {
+            pushHistory();
+            state.runs += r; state.balls += 1; state.thisOver.push(r);
+            state[state.striker].r += r; state[state.striker].b += 1;
+            if (r === 4) state[state.striker].f += 1;
+            if (r === 6) state[state.striker].s += 1;
+            state.bowlers[state.currBwl].r += r; state.bowlers[state.currBwl].b += 1;
+            
+            if (r % 2 !== 0) swap(false); 
+            let legalDeliveries = state.thisOver.filter(b => typeof b === 'number' || b === 'W').length;
+            if (legalDeliveries === 6) swap(false); 
+            
+            render(); checkOverAndInnings();
+        }
+
+        function extra(type) { 
+            let addR = parseInt(prompt(`Extra runs scored on this ${type.toUpperCase()}? (Enter 0 if none)`, "0"));
+            if (isNaN(addR)) return;
+            pushHistory(); 
+            
+            let total = 1 + addR;
+            state.runs += total; 
+            state.bowlers[state.currBwl].r += total;
+            
+            if (type === 'wd') state.bowlers[state.currBwl].wd += total; 
+            if (type === 'nb') state.bowlers[state.currBwl].nb += 1; 
+
+            let label = type.toUpperCase() + (addR > 0 ? '+'+addR : '');
+            state.thisOver.push(label);
+            
+            if (type === 'nb') {
+                state[state.striker].r += addR; state[state.striker].b += 1;
+                if (addR === 4) state[state.striker].f += 1;
+                if (addR === 6) state[state.striker].s += 1;
+            }
+            if (addR % 2 !== 0) swap(false); 
+            render(); checkOverAndInnings();
+        }
+        
+        function swap(m=true) { if(m) pushHistory(); state.striker = state.striker === 'b1' ? 'b2' : 'b1'; render(); }
+
+        function handleNewIncomingBatter() {
+            let injuredPool = state.others.filter(p => p.fate === "Retired Hurt");
+            
+            if(injuredPool.length > 0) {
+                let injuredNames = injuredPool.map((p, i) => `${i+1}: ${p.name} (${p.r} runs)`).join("\n");
+                let choice = prompt(`WICKET! Do you want an injured batsman to return, or bring a new one?\n\nType the number to return a player, or leave blank/cancel for a new batter:\n\n${injuredNames}`);
+                
+                let idx = parseInt(choice) - 1;
+                if(!isNaN(idx) && injuredPool[idx]) {
+                    let targetPlayer = injuredPool[idx];
+                    state.others = state.others.filter(p => !(p.name === targetPlayer.name && p.fate === "Retired Hurt"));
+                    state[state.striker] = {name: targetPlayer.name, r: targetPlayer.r, b: targetPlayer.b, f: targetPlayer.f, s: targetPlayer.s, out: false, fate: ""};
+                    return;
+                }
+            }
+            
+            let nextName = prompt("Enter new batsman name:");
+            state[state.striker] = {name: formatName(nextName || "Batter " + (state.wickets + 2)), r: 0, b: 0, f: 0, s: 0, out: false, fate: ""};
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (state && state.active) {
+                render();
+            }
+        });
+
+        function wicket() {
+            if(state.wickets >= 10) return;
+            pushHistory();
+            state.wickets += 1; state.balls += 1; state.thisOver.push('W');
+            state[state.striker].b += 1; state.bowlers[state.currBwl].b += 1; state.bowlers[state.currBwl].w += 1;
+            state.others.push({...state[state.striker], out: true, fate: "Out"});
+            
+            if (state.wickets < 10) {
+                handleNewIncomingBatter();
+            }
+            
+            let legalDeliveries = state.thisOver.filter(b => typeof b === 'number' || b === 'W').length;
+            if (legalDeliveries === 6) swap(false); 
+            render(); checkOverAndInnings();
+        }
+
+        function retiredOut() {
+            if(state.wickets >= 10) return;
+            if(!confirm(`Are you sure you want to tactical Retire Out ${state[state.striker].name}?`)) return;
+            
+            pushHistory();
+            state.wickets += 1; 
+            state.thisOver.push('Ret'); 
+            
+            state.others.push({...state[state.striker], out: true, fate: "Retired Out"});
+            
+            if (state.wickets < 10) {
+                handleNewIncomingBatter();
+            }
+            render(); checkOverAndInnings();
+        }
+
+        function retiredHurt() {
+            if(!confirm(`Mark ${state[state.striker].name} as Retired Hurt? (They can bat again later)`)) return;
+            
+            pushHistory();
+            state.thisOver.push('Hurt');
+            
+            state.others.push({...state[state.striker], out: false, fate: "Retired Hurt"});
+            
+            let nextName = prompt(`${state[state.striker].name} is resting. Enter incoming batsman name:`);
+            state[state.striker] = {name: formatName(nextName || "Batter"), r: 0, b: 0, f: 0, s: 0, out: false, fate: ""};
+            
+            render(); checkOverAndInnings();
+        }
+
+        function pushHistory() { 
+            let snap = JSON.parse(JSON.stringify(state)); 
+            snap.history = []; 
+            state.history.push(JSON.stringify(snap));
+        }
+
+        function undo() { 
+            if(state.history.length > 0) { 
+                let prevStr = state.history.pop(); 
+                let preservedHistory = state.history; 
+                state = JSON.parse(prevStr); 
+                state.history = preservedHistory; 
+                render(); 
+            } 
+        }
+
+        function resetMatch() {
+            if(confirm("Are you sure you want to erase this match completely and start a new one?")) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        }
+
+        function padStr(str, length) { return (str + " ".repeat(length)).substring(0, length); }
+
+        function downloadScorecardImage() {
+            let instructions = []; 
+            function addLine(txt, color = '#ffffff', strike = false, italic = false) {
+                instructions.push({ text: txt, color: color, strike: strike, italic: italic });
+            }
+
+            addLine("=================================================", '#fbbf24');
+            addLine("             OFFICIAL MATCH SCORECARD            ", '#fbbf24');
+            addLine("=================================================", '#fbbf24');
+            addLine("");
+
+            let d = state.innings1Data;
+            if (d) {
+                addLine("--- FIRST INNINGS ---", '#fbbf24');
+                addLine(`Score:  ${d.runs} / ${d.wickets}`, '#4ade80');
+                addLine(`Overs:  ${getOvers(d.balls)}`);
+                addLine("");
+                
+                addLine("BATTING:", '#8b5cf6');
+                d.batters.forEach(b => {
+                    let fateLabel = b.fate ? ` (${b.fate === 'Retired Hurt' ? 'Hurt' : 'Ret'})` : (b.out ? " " : "*");
+                    let lineText = padStr(b.name + fateLabel, 15) + padStr(`${b.r} (${b.b})`, 10) + `[4s: ${b.f}, 6s: ${b.s}]`;
+                    
+                    let isHurt = b.fate === "Retired Hurt";
+                    addLine(lineText, isHurt ? '#60a5fa' : (b.out ? '#777777' : '#ffffff'), b.out, isHurt);
+                });
+                
+                addLine("");
+                addLine("BOWLING:", '#8b5cf6');
+                for (let bName in d.bowlers) {
+                    let s = d.bowlers[bName];
+                    let econ = s.b === 0 ? "0.00" : (s.r / (s.b / 6)).toFixed(2);
+                    let figs = `${getOvers(s.b)} - 0 - ${s.r} - ${s.w}`;
+                    addLine(padStr(bName, 15) + padStr(figs, 18) + `(Econ: ${econ}, Wd: ${s.wd}, NB: ${s.nb})`);
+                }
+
+                if (d.oversHistory && d.oversHistory.length > 0) {
+                    addLine("");
+                    addLine("OVER-BY-OVER LOG:", '#8b5cf6');
+                    d.oversHistory.forEach((ov, idx) => {
+                        let ballStr = ov.balls.map(b => (b === 0 || b === '0') ? '.' : b).join(' ');
+                        addLine(padStr(`Ov ${idx + 1}: ${ov.bowler}`, 20) + `[ ${ballStr} ]`);
+                    });
+                }
+                addLine("");
+                addLine("-------------------------------------------------", '#fbbf24');
+                addLine("");
+            }
+
+            let txtHeading = d ? "--- SECOND INNINGS ---" : "--- CURRENT INNINGS ---";
+            addLine(txtHeading, '#fbbf24');
+            addLine(`Score:  ${state.runs} / ${state.wickets}`, '#4ade80');
+            addLine(`Overs:  ${getOvers(state.balls)}`);
+            if (d) addLine(`Target: ${state.target}`);
+            addLine("");
+            
+            addLine("BATTING:", '#8b5cf6');
+            let allCurrentBatters = [...state.others];
+            if (state.b1.b > 0 || state.b1.r > 0 || !state.b1.out) allCurrentBatters.push({...state.b1, out: false});
+            if (state.b2.b > 0 || state.b2.r > 0 || !state.b2.out) allCurrentBatters.push({...state.b2, out: false});
+            
+            allCurrentBatters.forEach(b => {
+                if (!b.name) return;
+                let fateLabel = b.fate ? ` (${b.fate === 'Retired Hurt' ? 'Hurt' : 'Ret'})` : (b.out ? " " : "*");
+                let lineText = padStr(b.name + fateLabel, 15) + padStr(`${b.r} (${b.b})`, 10) + `[4s: ${b.f}, 6s: ${b.s}]`;
+                
+                let isHurt = b.fate === "Retired Hurt";
+                addLine(lineText, isHurt ? '#60a5fa' : (b.out ? '#777777' : '#ffffff'), b.out, isHurt);
+            });
+            
+            addLine("");
+            addLine("BOWLING:", '#8b5cf6');
+            for (let bName in state.bowlers) {
+                let s = state.bowlers[bName];
+                let econ = s.b === 0 ? "0.00" : (s.r / (s.b / 6)).toFixed(2);
+                let figs = `${getOvers(s.b)} - 0 - ${s.r} - ${s.w}`;
+                addLine(padStr(bName, 15) + padStr(figs, 18) + `(Econ: ${econ}, Wd: ${s.wd}, NB: ${s.nb})`);
+            }
+
+            let currentOversHistory = [...state.oversHistory];
+            if (state.thisOver.length > 0) {
+                currentOversHistory.push({ bowler: state.currBwl, balls: [...state.thisOver] });
+            }
+            if (currentOversHistory.length > 0) {
+                addLine("");
+                addLine("OVER-BY-OVER LOG:", '#8b5cf6');
+                currentOversHistory.forEach((ov, idx) => {
+                    let ballStr = ov.balls.map(b => (b === 0 || b === '0') ? '.' : b).join(' ');
+                    addLine(padStr(`Ov ${idx + 1}: ${ov.bowler}`, 20) + `[ ${ballStr} ]`);
+                });
+            }
+
+            addLine("");
+            addLine("=================================================", '#fbbf24');
+            addLine("Generated by Dunwoody Dashers Scorer", '#aaa');
+
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            
+            canvas.width = 650; 
+            canvas.height = (instructions.length * 20) + 60; 
+            
+            ctx.fillStyle = '#121212';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            instructions.forEach((instr, index) => {
+                let y = 40 + (index * 20);
+                let stylePrefix = instr.italic ? 'italic ' : '';
+                ctx.font = stylePrefix + '15px "Courier New", Courier, monospace';
+                ctx.fillStyle = instr.color;
+                ctx.fillText(instr.text, 25, y);
+                
+                if (instr.strike) {
+                    let textWidth = ctx.measureText(instr.text).width;
+                    ctx.beginPath();
+                    ctx.moveTo(25, y - 5); 
+                    ctx.lineTo(25 + textWidth, y - 5);
+                    ctx.strokeStyle = instr.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+            });
+
+            let link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            let dateStr = new Date().toISOString().split('T')[0];
+            link.download = `Match_Receipt_${dateStr}.png`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        render();
+    </script>
+</body>
+</html>
