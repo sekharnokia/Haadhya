@@ -46,10 +46,10 @@
             animation: fadeSlideshow 32s infinite;
         }
 
-        .slide-1 { background-image: url('background1.jpg'); animation-delay: 0s; }
-        .slide-2 { background-image: url('background2.jpg'); animation-delay: 8s; }
-        .slide-3 { background-image: url('background3.jpg'); animation-delay: 16s; }
-        .slide-4 { background-image: url('background4.jpg'); animation-delay: 24s; }
+        .slide-1 { background-image: url('background1.webp'); animation-delay: 0s; }
+        .slide-2 { background-image: url('background2.webp'); animation-delay: 8s; }
+        .slide-3 { background-image: url('background3.webp'); animation-delay: 16s; }
+        .slide-4 { background-image: url('background4.webp'); animation-delay: 24s; }
 
         @keyframes fadeSlideshow {
             0% { opacity: 0; animation-timing-function: ease-in; }
@@ -213,6 +213,7 @@
             .video-wrapper { max-width: 100%; min-height: 500px; }
         }
     </style>
+    <link rel="preload" as="image" href="background.webp">
 </head>
 <body>
 
